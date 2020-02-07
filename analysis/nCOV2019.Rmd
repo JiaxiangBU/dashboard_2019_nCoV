@@ -1,0 +1,359 @@
+---
+title: "2019-nCoV"
+output: 
+  flexdashboard::flex_dashboard:
+    navbar:
+      - { title: "WHO", href: "https://www.who.int/", align: left }
+    storyboard: true
+    orientation: rows
+    vertical_layout: fill
+    theme: yeti
+---
+<font face="微软雅黑">图片素材来源于WHO官网,主要数据来自于百度疫情实时大数据报告[https://voice.baidu.com/act/newpneumonia/newpneumonia/?from=osari_pc_1]</font>
+
+```{r setup, include=FALSE}
+library(knitr)
+library(shiny)
+library(forecast)
+library(flexdashboard)
+library(dygraphs)
+library(leaflet)
+library(leafletCN)
+library(highcharter)
+library(plotly)
+library(d3heatmap)
+library(d3Network)
+library(DT)
+library(data.table)
+library(tidyverse)
+library(readxl)
+library(jsonlite)
+library(ggthemes)
+```
+
+
+Analysis {data-icon="fa-chart-pie"}
+===================================== 
+
+Row {data-height=250}
+-------------------------------------
+### Articles per Day
+
+```{r}
+qz <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+                    sheet = '最新全国情况',
+                    col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
+  setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
+  mutate(update_time = as.Date(update_time)) %>%
+  filter(update_time == '2020-02-04',region =='全国') %>% 
+  pull(qz)
+
+valueBox(qz, caption = '<font face="黑体" size = 5>确诊人数</font>', icon = "fa-user-md")# ion-medkit
+```
+
+### Comments per Day
+
+```{r}
+ys <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+                    sheet = '最新全国情况',
+                    col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
+  setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
+  mutate(update_time = as.Date(update_time)) %>%
+  filter(update_time == '2020-02-04',region =='全国') %>% 
+  pull(ys)
+
+valueBox(ys, caption = '<font face="黑体" size = 5>疑似人数</font>',icon = "fa-ambulance")# ion-thermometer
+```
+
+### Spam per Day
+
+```{r}
+
+sw <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+                    sheet = '最新全国情况',
+                    col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
+  setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
+  mutate(update_time = as.Date(update_time)) %>%
+  filter(update_time == '2020-02-04',region =='全国') %>% 
+  pull(sw)
+# background colors ("primary", "info", "success", "warning", "danger") or any valid CSS color value
+valueBox(sw, 
+         icon = "fa-medkit",# "ion-help"
+         caption = '<font face="黑体" size = 5>疑似人数</font>',
+         color = ifelse(sw > 1000, "warning", "primary"))
+```
+
+Row {data-height=400}
+-------------------------------------
+### WHO {data-width=350}
+```{r pic}
+include_graphics("E:/dataset/2019-nCoV/1.png")
+```
+
+### <font face="黑体" size = 10>什么是新型冠状病毒</font> {data-width=250}
+
+***
+<font face="微软雅黑">2019年12月31日，世卫组织获悉在中国湖北省武汉市发现若干例肺炎病例。该病毒与任何其它已知病毒不符。这令人关切，因为我们不了解新病毒如何影响人类。</font>
+
+<font face="微软雅黑">一周后，即2020年1月7日，中国主管部门确认他们发现了一种新病毒。该病毒属于冠状病毒。冠状病毒是一个大型病毒家族，包括引起普通感冒的病毒以及严重急性呼吸综合征冠状病毒和中东呼吸综合征冠状病毒。这一新病毒暂时命名为2019新型冠状病毒(2019-nCoV)。</font>
+
+Row
+-------------------------------------
+### 2月4日最新数据
+
+```{r}
+ts <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+          sheet = '全国-时序数据',
+          col_types = c("date", "numeric", "numeric", "numeric", "numeric")) %>% 
+  #date字段输入时设定为nuermic,设定为date时，后面画图会出问题?
+  setnames(c("确诊","疑似","治愈","死亡"), c("qz", "ys", "zy", "sw")) %>%
+  as.tibble() %>% 
+  gather("category", "value", -date) %>% 
+  mutate(date = as.character(date)) %>%
+  hchart("line", hcaes(date, value, group = "category")) %>% 
+  hc_plotOptions(line= list(dataLabels = list(enabled =TRUE))) %>% 
+  hc_title(text = "新冠病毒确诊、疑似、死亡和住院人数最新数据")
+ts
+```
+> 注释:
+
+Details {.storyboard data-icon="fa-images"}
+===================================== 
+
+
+### <font face="黑体" size = 5>截至2020年2月4日，北京市各区县新型冠状病毒感染确诊情况</font>
+```{r}
+data_bj <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+                    sheet = '北京各区县情况地区',
+                    col_types = c("date", "text", "numeric", "numeric", "numeric")) %>%
+  setnames(c("确诊","死亡","治愈","地区"), c("qz", "sw", "zy","region")) %>% 
+  mutate(date = as.Date(date)) %>%
+  filter(region != '北京',region!='待确认',region!='外地来京') %>% 
+  select(region,qz) %>%
+  as.data.frame()
+
+map_bj = leafletGeo("北京",data_bj)
+
+#涂色环节
+pal_bj<-colorNumeric(palette="Reds",domain=map_bj$qz)
+  
+#载入高德地图amap
+  
+leaflet(map_bj) %>% 
+  amap() %>% 
+  setView(lng = 116.401969, lat = 40.094223, zoom = 9)%>%
+  #加入框边界及颜色
+  addPolygons(stroke=TRUE,
+              smoothFactor=1,
+              fillOpacity=0.7,
+              weight=1,
+              color=~pal_bj(value),
+              popup=~htmltools::htmlEscape(popup))%>%
+  addLegend("bottomright",pal=pal_bj,values=~value,
+            title="确诊人数",
+            labFormat=leaflet::labelFormat(prefix=""),
+            opacity=1)
+```
+
+*** 
+<font face="微软雅黑" size = 5>数据来源:百度疫情实时大数据报告</font>
+
+- <font face="微软雅黑" size = 5>全市感染新冠病毒确诊人数达253人</font>
+- <font face="微软雅黑" size = 5>其中海淀区45人</font>
+- <font face="微软雅黑" size = 5>朝阳区43人</font>
+- <font face="微软雅黑" size = 5>大兴区29人</font>
+- <font face="微软雅黑" size = 5>西城区29人</font>
+- <font face="微软雅黑" size = 5>外地来京21人</font>
+
+
+### <font face="黑体" size = 5>截至2020年2月4日，全国各省市新型冠状病毒感染确诊情况</font>
+
+```{r}
+data_china <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+                    sheet = '最新全国情况',
+                    col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
+  setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
+  mutate(update_time = as.Date(update_time)) %>%
+  filter(update_time == '2020-02-04',region != '全国') %>% 
+  select(region,qz) %>%
+  mutate(qz = log(qz)) %>%
+  as.data.frame()
+
+map_china <- leafletGeo("china",data_china)
+
+#涂色环节
+pal_china<-colorNumeric(palette="Reds",domain=map_china$qz)
+  
+#载入高德地图amap
+  
+leaflet(map_china) %>% 
+  amap() %>% 
+  setView(lng = 106.256435, lat = 34.417324, zoom = 4)%>%
+  #加入框边界及颜色
+  addPolygons(stroke=TRUE,
+              smoothFactor=1,
+              fill = TRUE,
+              fillOpacity = 0.7,
+              weight=1,
+              color=~pal_china(value),
+              popup=~htmltools::htmlEscape(popup))
+```
+
+*** 
+<font face="微软雅黑" size = 5>数据来源:百度疫情实时大数据报告</font>
+
+- <font face="微软雅黑" size = 5>全国感染新冠病毒确诊人数达24363人</font>
+- <font face="微软雅黑" size = 5>其中湖北省16678人</font>
+- <font face="微软雅黑" size = 5>浙江省895人</font>
+- <font face="微软雅黑" size = 5>广东省813人</font>
+- <font face="微软雅黑" size = 5>河南省764人</font>
+- <font face="微软雅黑" size = 5>湖南省661人</font>
+- <font face="微软雅黑" size = 5>江西省548人</font>
+
+
+### <font face="黑体" size = 5>全国新冠病毒感染人数预测</font>
+```{r}
+thm <- 
+  hc_theme(
+    colors = c("#1a6ecc", "#434348", "#90ed7d"),
+    chart = list(
+      backgroundColor = "transparent",
+      style = list(fontFamily = "Source Sans Pro")
+    ),
+    xAxis = list(
+      gridLineWidth = 1
+    )
+  )
+
+chart4 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+          sheet = '全国-时序数据',
+          col_types = c("numeric", "numeric", "numeric", "numeric", "numeric")) %>%
+  setnames(c("确诊","疑似","治愈","死亡"), c("qz", "ys", "zy", "sw")) %>% 
+  select(qz) %>%
+  ts(frequency = 1) %>% 
+  forecast::forecast(level = 90) %>% 
+  hchart() %>% 
+  hc_add_theme(thm)
+chart4
+```
+
+*** <font face="微软雅黑" size = 5>数据来源:百度疫情实时大数据报告</font>
+
+- <font face="微软雅黑" size = 5>全市感染新冠病毒确诊人数达228人</font>
+- <font face="微软雅黑" size = 5>其中海淀区45人</font>
+- <font face="微软雅黑" size = 5>朝阳区36人</font>
+- <font face="微软雅黑" size = 5>大兴区29人</font>
+- <font face="微软雅黑" size = 5>西城区28人</font>
+- <font face="微软雅黑" size = 5>外地来京20人</font>
+
+
+population flow {data-icon="fa-map"}
+===================================== 
+
+Row 
+-----------------------------------------------------------------------
+
+### Contact Rate
+
+```{r}
+rate <- 97
+gauge(rate, min = 0, max = 100, symbol = '%', gaugeSectors(
+  success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
+))
+```
+
+### Average Rating 
+
+```{r}
+rating <- 78
+gauge(rating, min = 0, max = 50, gaugeSectors(
+  success = c(41, 50), warning = c(21, 40), danger = c(0, 20)
+))
+```
+
+### 死亡率
+
+```{r}
+rt <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+                    sheet = '最新全国情况',
+                    col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
+  setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
+  mutate(update_time = as.Date(update_time)) %>%
+  filter(update_time == '2020-02-04',region =='全国') %>% 
+  select(qz,sw)
+swl <- round(rt[['sw']]/rt[['qz']]*100,2)
+gauge(swl, min = 0, max = 100, gaugeSectors(
+  success = c(0, 3), warning = c(3, 10), danger = c(11, 100)
+))
+```
+
+Row 
+-----------------------------------------------------------------------
+### 1月1日-2月4日武汉市人口迁出流向
+```{r}
+chart7 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+          sheet = '武汉人口迁出',
+          col_types = c("date", "numeric", "text", "numeric")) %>%
+  setnames(c("日期","排名","省份","迁出比例"), c("date", "rank", "region","ratio")) %>% 
+  mutate(ratio = ratio*100)%>%
+  select(date,region,ratio) %>%
+  group_by(date)%>%
+  top_n(10,ratio)%>%
+  ungroup()%>%
+  mutate(date = as.character(date)) %>%
+  plot_ly(
+    x = ~ratio, 
+    y = ~ reorder(region,ratio), 
+    color = ~region, 
+    frame = ~date, 
+    text = ~region,
+    type = 'bar',
+    orientation = 'h')%>%
+  layout(xaxis= list(range = c(0,100),title='人口流动比例'),
+         yaxis = list(title = ''))%>%
+  animation_slider(currentvalue = list(prefix = "date ", font = list(color="red")))
+
+chart7
+```
+
+***
+
+直播回放：记者直击今日10点武汉“封城”
+1月23日10时起，武汉城市公交、地铁、轮渡、长途客运暂停运营，机场、火车站离汉通道暂时关闭。
+
+### 1月1日-2月4日北京市主要人口迁入来源
+
+```{r}
+data1 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+          sheet = '北京人口迁入',
+          col_types = c("date", "numeric", "text", "numeric")) %>%
+  setnames(c("日期","排名","省份","迁出比例"), c("date", "rank", "region","ratio")) %>%
+  mutate(ratio = ratio*100)%>%
+  select(date,region,ratio) %>%
+  filter(region == '湖北省')%>%
+  mutate(date = as.character(date))
+
+data2 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+          sheet = '北京',
+          col_types = c("date","numeric", "numeric", "numeric")) %>%
+  setnames(c("update_time","确诊","死亡","治愈"), c("date", "qz", "sw","zy"))%>%
+  select(date,qz) %>%
+  mutate(date = as.character(date))
+
+ay <- list(
+  tickfont = list(color = "red"),
+  overlaying = "y",
+  side = "right",
+  title = "新冠病毒确诊人数"
+)
+p <- plot_ly() %>%
+  add_bars(x = ~data1$date , y = ~data1$ratio, name = "") %>%
+  add_lines(x = ~data2$date, y = ~data2$qz, name = "", yaxis = "y2") %>%
+  layout(
+    title = "", yaxis2 = ay,
+    yaxis = list(title = "北京市人口迁入总量中来自湖北省的人数比重(%)"),
+    xaxis = list(title= "")
+  )
+
+p
+```
