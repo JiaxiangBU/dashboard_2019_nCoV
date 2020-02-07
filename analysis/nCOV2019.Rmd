@@ -99,7 +99,7 @@ Row {data-height=400}
 -------------------------------------
 ### WHO {data-width=350}
 ```{r pic}
-include_graphics("../data/1.png")
+include_graphics("../figure/cover.png")
 ```
 
 ### <font face="黑体" size = 10>什么是新型冠状病毒</font> {data-width=250}
@@ -336,7 +336,7 @@ chart7
 ### 1月1日-2月4日北京市主要人口迁入来源
 
 ```{r}
-Ndata1 <- read_xlsx('../data/nCOV2019.xlsx',
+data1 <- read_xlsx('../data/nCOV2019.xlsx',
           sheet = '北京人口迁入',
           col_types = c("date", "numeric", "text", "numeric")) %>%
   setnames(c("日期","排名","省份","迁出比例"), c("date", "rank", "region","ratio")) %>%
