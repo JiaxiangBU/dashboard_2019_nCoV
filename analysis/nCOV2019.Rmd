@@ -12,23 +12,33 @@ output:
 <font face="微软雅黑">图片素材来源于WHO官网,主要数据来自于百度疫情实时大数据报告[https://voice.baidu.com/act/newpneumonia/newpneumonia/?from=osari_pc_1]</font>
 
 ```{r setup, include=FALSE}
+# library(knitr)
+# library(shiny)
+# library(forecast)
+# library(flexdashboard)
+# library(dygraphs)
+# library(leaflet)
+# library(leafletCN)
+# library(highcharter)
+# library(plotly)
+# library(d3heatmap)
+# library(d3Network)
+# library(DT)
+# library(data.table)
+# library(tidyverse)
+# library(readxl)
+# library(jsonlite)
+# library(ggthemes)
 library(knitr)
-library(shiny)
 library(forecast)
 library(flexdashboard)
-library(dygraphs)
 library(leaflet)
 library(leafletCN)
 library(highcharter)
 library(plotly)
-library(d3heatmap)
-library(d3Network)
-library(DT)
 library(data.table)
 library(tidyverse)
 library(readxl)
-library(jsonlite)
-library(ggthemes)
 ```
 
 
@@ -40,13 +50,15 @@ Row {data-height=250}
 ### Articles per Day
 
 ```{r}
-qz <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
-                    sheet = '最新全国情况',
-                    col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
-  setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
+qz <- read_xlsx(
+  '../data/nCOV2019.xlsx',
+  sheet = '最新全国情况',
+  col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")
+) %>%
+  setnames(c("确诊", "死亡", "治愈", "疑似"), c("qz", "sw", "zy", "ys")) %>%
   mutate(update_time = as.Date(update_time)) %>%
-  filter(update_time == '2020-02-04',region =='全国') %>% 
-  pull(qz)
+  filter(update_time == '2020-02-04', region == '全国') %>% 
+  dplyr::pull(qz)
 
 valueBox(qz, caption = '<font face="黑体" size = 5>确诊人数</font>', icon = "fa-user-md")# ion-medkit
 ```
@@ -54,13 +66,13 @@ valueBox(qz, caption = '<font face="黑体" size = 5>确诊人数</font>', icon 
 ### Comments per Day
 
 ```{r}
-ys <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+ys <- read_xlsx('../data/nCOV2019.xlsx',
                     sheet = '最新全国情况',
                     col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
   setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
   mutate(update_time = as.Date(update_time)) %>%
   filter(update_time == '2020-02-04',region =='全国') %>% 
-  pull(ys)
+  dplyr::pull(ys)
 
 valueBox(ys, caption = '<font face="黑体" size = 5>疑似人数</font>',icon = "fa-ambulance")# ion-thermometer
 ```
@@ -69,13 +81,13 @@ valueBox(ys, caption = '<font face="黑体" size = 5>疑似人数</font>',icon =
 
 ```{r}
 
-sw <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+sw <- read_xlsx('../data/nCOV2019.xlsx',
                     sheet = '最新全国情况',
                     col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
   setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
   mutate(update_time = as.Date(update_time)) %>%
   filter(update_time == '2020-02-04',region =='全国') %>% 
-  pull(sw)
+  dplyr::pull(sw)
 # background colors ("primary", "info", "success", "warning", "danger") or any valid CSS color value
 valueBox(sw, 
          icon = "fa-medkit",# "ion-help"
@@ -87,7 +99,7 @@ Row {data-height=400}
 -------------------------------------
 ### WHO {data-width=350}
 ```{r pic}
-include_graphics("E:/dataset/2019-nCoV/1.png")
+include_graphics("../data/1.png")
 ```
 
 ### <font face="黑体" size = 10>什么是新型冠状病毒</font> {data-width=250}
@@ -102,7 +114,7 @@ Row
 ### 2月4日最新数据
 
 ```{r}
-ts <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+ts <- read_xlsx('../data/nCOV2019.xlsx',
           sheet = '全国-时序数据',
           col_types = c("date", "numeric", "numeric", "numeric", "numeric")) %>% 
   #date字段输入时设定为nuermic,设定为date时，后面画图会出问题?
@@ -123,7 +135,7 @@ Details {.storyboard data-icon="fa-images"}
 
 ### <font face="黑体" size = 5>截至2020年2月4日，北京市各区县新型冠状病毒感染确诊情况</font>
 ```{r}
-data_bj <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+data_bj <- read_xlsx('../data/nCOV2019.xlsx',
                     sheet = '北京各区县情况地区',
                     col_types = c("date", "text", "numeric", "numeric", "numeric")) %>%
   setnames(c("确诊","死亡","治愈","地区"), c("qz", "sw", "zy","region")) %>% 
@@ -169,7 +181,7 @@ leaflet(map_bj) %>%
 ### <font face="黑体" size = 5>截至2020年2月4日，全国各省市新型冠状病毒感染确诊情况</font>
 
 ```{r}
-data_china <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+data_china <- read_xlsx('../data/nCOV2019.xlsx',
                     sheet = '最新全国情况',
                     col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
   setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
@@ -225,7 +237,7 @@ thm <-
     )
   )
 
-chart4 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+chart4 <- read_xlsx('../data/nCOV2019.xlsx',
           sheet = '全国-时序数据',
           col_types = c("numeric", "numeric", "numeric", "numeric", "numeric")) %>%
   setnames(c("确诊","疑似","治愈","死亡"), c("qz", "ys", "zy", "sw")) %>% 
@@ -274,7 +286,7 @@ gauge(rating, min = 0, max = 50, gaugeSectors(
 ### 死亡率
 
 ```{r}
-rt <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+rt <- read_xlsx('../data/nCOV2019.xlsx',
                     sheet = '最新全国情况',
                     col_types = c("date", "text", "numeric", "numeric", "numeric", "numeric")) %>%
   setnames(c("确诊","死亡","治愈","疑似"), c("qz", "sw", "zy","ys")) %>% 
@@ -291,7 +303,7 @@ Row
 -----------------------------------------------------------------------
 ### 1月1日-2月4日武汉市人口迁出流向
 ```{r}
-chart7 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+chart7 <- read_xlsx('../data/nCOV2019.xlsx',
           sheet = '武汉人口迁出',
           col_types = c("date", "numeric", "text", "numeric")) %>%
   setnames(c("日期","排名","省份","迁出比例"), c("date", "rank", "region","ratio")) %>% 
@@ -324,7 +336,7 @@ chart7
 ### 1月1日-2月4日北京市主要人口迁入来源
 
 ```{r}
-data1 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+Ndata1 <- read_xlsx('../data/nCOV2019.xlsx',
           sheet = '北京人口迁入',
           col_types = c("date", "numeric", "text", "numeric")) %>%
   setnames(c("日期","排名","省份","迁出比例"), c("date", "rank", "region","ratio")) %>%
@@ -333,7 +345,7 @@ data1 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
   filter(region == '湖北省')%>%
   mutate(date = as.character(date))
 
-data2 <- read_xlsx('E:/dataset/2019-nCoV/nCOV2019.xlsx',
+data2 <- read_xlsx('../data/nCOV2019.xlsx',
           sheet = '北京',
           col_types = c("date","numeric", "numeric", "numeric")) %>%
   setnames(c("update_time","确诊","死亡","治愈"), c("date", "qz", "sw","zy"))%>%
